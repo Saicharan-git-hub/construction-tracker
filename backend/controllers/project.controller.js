@@ -14,7 +14,53 @@ export const createProject = async (req, res) => {
 
 export const getProjects = async (req, res) => {
     try {
-        const projects = await Project.find({});
+        const projects = await Project.aggregate([
+            {
+                $lookup: {
+                    from: "tasks",
+                    localField: "_id",
+                    foreignField: "project",
+                    as: "tasks"
+                }
+            },
+            {
+                $lookup: {
+                    from: "expenses",
+                    localField: "_id",
+                    foreignField: "project",
+                    as: "expenses"
+                }
+            },
+            {
+                $addFields: {
+                    totalExpense: { $sum: "$expenses.amount" },
+                    totalTasks: { $size: "$tasks" },
+                    totalProgress: { $sum: "$tasks.progressPercentage" },
+                    completedTasks: {
+                        $size: {
+                            $filter: {
+                                input: "$tasks",
+                                as: "task",
+                                cond: { $eq: ["$$task.status", "Completed"] }
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    budgetUtilized: {
+                        $cond: [{ $gt: ["$budget", 0] }, { $multiply: [{ $divide: ["$totalExpense", "$budget"] }, 100] }, 0]
+                    },
+                    completionPercentage: {
+                        $cond: [{ $gt: ["$totalTasks", 0] }, { $divide: ["$totalProgress", "$totalTasks"] }, 0]
+                    }
+                }
+            },
+            {
+                $project: { tasks: 0, expenses: 0 }
+            }
+        ]);
         res.json(projects);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -33,8 +79,11 @@ export const getProjectById = async (req, res) => {
         let budgetUtilized = project.budget > 0 ? (totalExpense / project.budget) * 100 : 0;
         
         let totalTasks = tasks.length;
-        let completedTasks = tasks.filter(t => t.status === 'Completed').length;
-        let completionPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+        let completionPercentage = 0;
+        if (totalTasks > 0) {
+            let totalProgress = tasks.reduce((acc, curr) => acc + (curr.progressPercentage || 0), 0);
+            completionPercentage = (totalProgress / totalTasks).toFixed(2);
+        }
         
         res.json({ project, tasks, expenses, totalExpense, budgetUtilized, completionPercentage });
     } catch (error) {
