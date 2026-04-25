@@ -25,17 +25,25 @@ export default function Reports() {
   };
 
   const exportPDF = async () => {
-    const input = reportRef.current;
-    if (!input) return;
+    const input = document.getElementById('report-section');
+    if (!input) {
+      console.error('Target element "report-section" not found.');
+      return;
+    }
 
     try {
+      // Add a small delay to ensure all DOM updates and styles are applied
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const canvas = await html2canvas(input, {
         scale: 2,
         useCORS: true,
-        logging: false
+        logging: true, // Enable logging for debugging on deployed site
+        windowWidth: input.scrollWidth,
+        windowHeight: input.scrollHeight
       });
       
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/png', 1.0);
       const pdf = new jsPDF('p', 'mm', 'a4');
       
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -67,8 +75,8 @@ export default function Reports() {
         </button>
       </div>
 
-      {/* Wrapping the content to be exported in a ref */}
-      <div ref={reportRef} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
+      {/* Wrapping the content to be exported in a ref and id */}
+      <div id="report-section" ref={reportRef} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
         {/* Export Header visible only on PDF (optional, but good for context) */}
         <div className="hidden pdf-header mb-6 pb-4 border-b border-slate-100">
           <h2 className="text-2xl font-bold text-slate-900">Construction Projects Master Report</h2>
