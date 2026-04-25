@@ -23,7 +23,11 @@ export default function Login() {
       navigate('/');
     } catch (err) {
       console.error('Login error:', err.response || err);
-      setError(err.response?.data?.message || 'Login failed - Please check connection');
+      if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+        setError('Server is taking too long. Please try again.');
+      } else {
+        setError(err.response?.data?.message || 'Login failed - Please check connection');
+      }
     } finally {
       setLoading(false);
     }

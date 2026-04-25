@@ -29,9 +29,11 @@ export const registerUser = async (req, res) => {
 
 export const loginUser = async (req, res) => {
     const { email, password } = req.body;
+    console.log(`[AUTH] Login attempt received for: ${email}`);
     try {
         const user = await User.findOne({ email });
         if (user && (await user.matchPassword(password))) {
+            console.log(`[AUTH] Login successful for: ${email}`);
             res.json({
                 _id: user._id,
                 name: user.name,
@@ -40,6 +42,7 @@ export const loginUser = async (req, res) => {
                 token: generateToken(user._id)
             });
         } else {
+            console.log(`[AUTH] Login failed for: ${email} - Invalid credentials`);
             res.status(401).json({ message: 'Invalid email or password' });
         }
     } catch (error) {
