@@ -6,8 +6,8 @@ import { validateTask, validateTaskUpdate } from '../middleware/validation.middl
 
 const router = express.Router();
 
-router.post('/', protect, authorizeRoles('Manager'), validateTask, createTask);
+router.post('/', protect, authorizeRoles('Manager', 'Engineer'), validateTask, createTask);
 router.put('/:id', protect, authorizeRoles('Manager', 'Engineer'), validateTaskUpdate, updateTask);
-router.delete('/:id', protect, authorizeRoles('Manager'), deleteTask);
+router.delete('/:id', protect, authorizeRoles('Manager', 'Engineer'), deleteTask);
 
 export default router;

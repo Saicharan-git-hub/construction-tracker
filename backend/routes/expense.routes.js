@@ -6,7 +6,7 @@ import { validateExpense } from '../middleware/validation.middleware.js';
 
 const router = express.Router();
 
-router.post('/', protect, authorizeRoles('Manager'), validateExpense, createExpense);
-router.delete('/:id', protect, authorizeRoles('Manager'), deleteExpense);
+router.post('/', protect, authorizeRoles('Manager', 'Engineer'), validateExpense, createExpense);
+router.delete('/:id', protect, authorizeRoles('Manager', 'Engineer'), deleteExpense);
 
 export default router;

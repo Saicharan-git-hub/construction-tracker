@@ -139,7 +139,7 @@ export default function ProjectDetails() {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
           <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">Project Tasks ({tasks.length})</h2>
           
-          {user?.role === 'Manager' && (
+          { (user?.role === 'Manager' || user?.role === 'Engineer') && (
             <form onSubmit={handleCreateTask} className="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200/60 space-y-3">
               <input type="text" placeholder="What needs to be done?" required className="w-full border-slate-300 rounded-lg p-2.5 text-sm focus:ring-slate-900 outline-none border" value={taskForm.taskName} onChange={e => setTaskForm({...taskForm, taskName: e.target.value})} />
               <div className="flex gap-2">
@@ -159,12 +159,18 @@ export default function ProjectDetails() {
               <div key={task._id} className="flex flex-col p-4 border border-slate-200/60 rounded-xl bg-white hover:border-slate-300 transition-colors shadow-sm group">
                 <div className="flex items-start justify-between gap-3">
                    <div className="flex items-start gap-3">
-                     <button 
-                       onClick={() => (user?.role === 'Manager' || user?.role === 'Engineer') && updateTaskStatus(task._id, task.status)}
-                       className={`mt-0.5 focus:outline-none ${(user?.role === 'Manager' || user?.role === 'Engineer') ? 'cursor-pointer hover:scale-110 transition-transform' : 'cursor-default'}`}
-                     >
-                       {task.status === 'Completed' ? <CheckCircle2 className="text-green-500 w-6 h-6" /> : task.status === 'In Progress' ? <Clock className="text-blue-500 w-6 h-6" /> : <Circle className="text-slate-300 w-6 h-6" />}
-                     </button>
+                     { (user?.role === 'Manager' || user?.role === 'Engineer') ? (
+                       <button 
+                         onClick={() => updateTaskStatus(task._id, task.status)}
+                         className="mt-0.5 focus:outline-none cursor-pointer hover:scale-110 transition-transform"
+                       >
+                         {task.status === 'Completed' ? <CheckCircle2 className="text-green-500 w-6 h-6" /> : task.status === 'In Progress' ? <Clock className="text-blue-500 w-6 h-6" /> : <Circle className="text-slate-300 w-6 h-6" />}
+                       </button>
+                     ) : (
+                       <div className="mt-0.5">
+                         {task.status === 'Completed' ? <CheckCircle2 className="text-green-500 w-6 h-6" /> : task.status === 'In Progress' ? <Clock className="text-blue-500 w-6 h-6" /> : <Circle className="text-slate-300 w-6 h-6" />}
+                       </div>
+                     )}
                      <div>
                        <p className={`font-bold leading-tight ${task.status === 'Completed' ? 'line-through text-slate-400' : 'text-slate-900'}`}>{task.taskName}</p>
                        <p className="text-xs font-semibold text-slate-500 mt-1">Due: {new Date(task.deadline).toLocaleDateString()}</p>
@@ -173,7 +179,7 @@ export default function ProjectDetails() {
                    
                    <div className="flex items-center gap-2">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getPriorityColor(task.priority)}`}>{task.priority}</span>
-                      {user?.role === 'Manager' && (
+                      { (user?.role === 'Manager' || user?.role === 'Engineer') && (
                          <button onClick={() => handleDeleteTask(task._id)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Trash2 className="w-4 h-4"/>
                          </button>
@@ -218,7 +224,7 @@ export default function ProjectDetails() {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
           <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">Financial Entries ({expenses.length})</h2>
 
-          {user?.role === 'Manager' && (
+          { (user?.role === 'Manager' || user?.role === 'Engineer') && (
             <form onSubmit={handleCreateExpense} className="mb-6 bg-amber-50/50 p-4 rounded-xl border border-amber-100/50 space-y-3">
               <input type="text" placeholder="Item or Service Description" required className="w-full border-slate-300 rounded-lg p-2.5 text-sm outline-none border focus:ring-amber-500" value={expenseForm.description} onChange={e => setExpenseForm({...expenseForm, description: e.target.value})} />
               <div className="flex gap-2">
@@ -243,7 +249,7 @@ export default function ProjectDetails() {
                 </div>
                 <div className="flex flex-col items-end gap-1">
                    <span className="font-black text-lg text-slate-900">${exp.amount.toLocaleString()}</span>
-                   {user?.role === 'Manager' && (
+                   { (user?.role === 'Manager' || user?.role === 'Engineer') && (
                        <button onClick={() => handleDeleteExpense(exp._id)} className="text-xs text-rose-500 hover:text-rose-700 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Delete</button>
                    )}
                 </div>
