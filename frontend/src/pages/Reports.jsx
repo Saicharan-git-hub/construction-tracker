@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 import { DownloadCloud, FileText, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 
 export default function Reports() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const reportRef = useRef(null);
 
   useEffect(() => {
     fetchProjects();
@@ -23,59 +24,55 @@ export default function Reports() {
     }
   };
 
-  const exportPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(20);
-    doc.text('Construction Projects Master Report', 14, 22);
-    
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+  const exportPDF = async () => {
+    const input = reportRef.current;
+    if (!input) return;
 
-    const tableColumn = ["Project Name", "Status", "Completion", "Spent Budget", "Total Budget"];
-    const tableRows = [];
-
-    projects.forEach(p => {
-      const pData = [
-        p.projectName,
-        p.status,
-        `${(p.completionPercentage || 0).toFixed(0)}%`,
-        `$${(p.totalExpense || 0).toLocaleString()}`,
-        `$${p.budget.toLocaleString()}`,
-      ];
-      tableRows.push(pData);
-    });
-
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 40,
-      theme: 'grid',
-      styles: { fontSize: 10, cellPadding: 3 },
-      headStyles: { fillColor: [15, 23, 42], textColor: 255 } // Slate-900
-    });
-
-    doc.save('construction_projects_report.pdf');
+    try {
+      const canvas = await html2canvas(input, {
+        scale: 2,
+        useCORS: true,
+        logging: false
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      // If content is taller than one page, it will be cropped or scaled differently.
+      // Scaling to fit width on a single A4 page. 
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save('construction_projects_report.pdf');
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+    }
   };
 
   if (loading) return <div className="text-center py-20 font-medium text-slate-500">Loading Report Data...</div>;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in duration-500">
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 pb-6 border-b border-slate-100">
-           <div>
-             <h1 className="text-3xl font-extrabold text-slate-900 flex items-center gap-3">
-               <FileText className="w-8 h-8 text-blue-600" />
-               Executive Reports
-             </h1>
-             <p className="text-slate-500 mt-2">Comprehensive summary of all project statuses and financials.</p>
-           </div>
-           
-           <button onClick={exportPDF} className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/20 transition-all focus:ring-4 focus:ring-blue-100">
-             <DownloadCloud className="w-5 h-5"/> Export to PDF
-           </button>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-900 flex items-center gap-3">
+            <FileText className="w-8 h-8 text-blue-600" />
+            Executive Reports
+          </h1>
+          <p className="text-slate-500 mt-2">Comprehensive summary of all project statuses and financials.</p>
+        </div>
+        <button onClick={exportPDF} className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/20 transition-all focus:ring-4 focus:ring-blue-100">
+          <DownloadCloud className="w-5 h-5"/> Export to PDF
+        </button>
+      </div>
+
+      {/* Wrapping the content to be exported in a ref */}
+      <div ref={reportRef} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
+        {/* Export Header visible only on PDF (optional, but good for context) */}
+        <div className="hidden pdf-header mb-6 pb-4 border-b border-slate-100">
+          <h2 className="text-2xl font-bold text-slate-900">Construction Projects Master Report</h2>
+          <p className="text-sm text-slate-500">Generated on: {new Date().toLocaleDateString()}</p>
         </div>
 
         {/* Dashboard-lite summaries for the report */}
