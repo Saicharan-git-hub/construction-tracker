@@ -35,11 +35,10 @@ export const getProjects = async (req, res) => {
                 $addFields: {
                     totalExpense: { $sum: "$expenses.amount" },
                     totalTasks: { $size: "$tasks" },
-                    totalProgress: { $sum: "$tasks.progressPercentage" },
                     completedTasks: {
                         $size: {
                             $filter: {
-                                input: "$tasks",
+                                input: { $ifNull: ["$tasks", []] },
                                 as: "task",
                                 cond: { $eq: ["$$task.status", "Completed"] }
                             }
@@ -50,10 +49,10 @@ export const getProjects = async (req, res) => {
             {
                 $addFields: {
                     budgetUtilized: {
-                        $cond: [{ $gt: ["$budget", 0] }, { $multiply: [{ $divide: ["$totalExpense", "$budget"] }, 100] }, 0]
+                        $cond: [{ $gt: ["$budget", 0] }, { $multiply: [{ $divide: ["$totalExpense", { $max: ["$budget", 1] }] }, 100] }, 0]
                     },
                     completionPercentage: {
-                        $cond: [{ $gt: ["$totalTasks", 0] }, { $divide: ["$totalProgress", "$totalTasks"] }, 0]
+                        $cond: [{ $gt: ["$totalTasks", 0] }, { $multiply: [{ $divide: ["$completedTasks", { $max: ["$totalTasks", 1] }] }, 100] }, 0]
                     }
                 }
             },
@@ -79,10 +78,10 @@ export const getProjectById = async (req, res) => {
         let budgetUtilized = project.budget > 0 ? (totalExpense / project.budget) * 100 : 0;
         
         let totalTasks = tasks.length;
+        let completedTasks = tasks.filter(t => t.status === 'Completed').length;
         let completionPercentage = 0;
         if (totalTasks > 0) {
-            let totalProgress = tasks.reduce((acc, curr) => acc + (curr.progressPercentage || 0), 0);
-            completionPercentage = (totalProgress / totalTasks).toFixed(2);
+            completionPercentage = Number(((completedTasks / totalTasks) * 100).toFixed(2));
         }
         
         res.json({ project, tasks, expenses, totalExpense, budgetUtilized, completionPercentage });
