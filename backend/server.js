@@ -26,14 +26,10 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-if (process.env.NODE_ENV !== 'production') {
-    connectDB().then(() => {
-        app.listen(PORT, () => console.log(`Server running in dev mode on port ${PORT}`));
+connectDB().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
     });
-} else {
-    connectDB().then(() => {
-        app.listen(PORT, () => console.log(`Server running in production on port ${PORT}`));
-    });
-}
+});
 
 export default app;
