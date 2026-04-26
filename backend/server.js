@@ -20,16 +20,20 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/expenses', expenseRoutes);
 
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', message: 'Server is awake' });
+});
+
 app.get('/', (req, res) => {
     res.send('API is running...');
 });
 
 const PORT = process.env.PORT || 5000;
 
-connectDB().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-    });
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
+
+connectDB().catch(err => console.error("DB connection failed:", err));
 
 export default app;

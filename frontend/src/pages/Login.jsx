@@ -10,27 +10,48 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState('Signing in...');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    const trimmedEmail = email.trim();
-    console.log('Attempting login for:', trimmedEmail);
+  const performLogin = async (trimmedEmail, password, isRetry = false) => {
     try {
       await login(trimmedEmail, password);
       console.log('Login successful');
       navigate('/');
+      return true;
     } catch (err) {
       console.error('Login error:', err.response || err);
-      if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
-        setError('Server is taking too long. Please try again.');
+      if (err.code === 'ECONNABORTED' || (err.message && err.message.includes('timeout'))) {
+        if (!isRetry) {
+          console.log('Timeout occurred, retrying once...');
+          setLoadingText('Still waking up server, retrying...');
+          return await performLogin(trimmedEmail, password, true);
+        } else {
+          setError('Server is starting up. Please try again in a few seconds.');
+        }
       } else {
         setError(err.response?.data?.message || 'Login failed - Please check connection');
       }
-    } finally {
-      setLoading(false);
+      return false;
     }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setLoadingText('Signing in...');
+    setError('');
+    
+    const timeoutId = setTimeout(() => {
+      setLoadingText('Waking up server, please wait...');
+    }, 5000);
+
+    const trimmedEmail = email.trim();
+    console.log('Attempting login for:', trimmedEmail);
+    
+    await performLogin(trimmedEmail, password);
+    
+    clearTimeout(timeoutId);
+    setLoading(false);
   };
 
   return (
@@ -72,7 +93,7 @@ export default function Login() {
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 transition-colors disabled:bg-slate-700 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? loadingText : 'Sign in'}
             </button>
           </div>
         </form>
